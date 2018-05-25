@@ -15,8 +15,6 @@ namespace console_lab
         private static CancellationTokenSource mainCts;
         private static CancellationTokenSource keyEventCts;
         private static CommandLineApplication app;
-        private static CommandOption watchCmd;
-        private static Func<int> appExecuteFunc = OnAppExecute;
         private static bool isTerminated = false;
 
         static void Main(string[] args)
@@ -25,7 +23,6 @@ namespace console_lab
 
             app = new CommandLineApplication();
             app.HelpOption();
-            watchCmd = app.Option("-w|--watch <TARGET>", "The watch targets", CommandOptionType.MultipleValue);
 
             app.Command("exit", exitCmd =>
             {
@@ -43,7 +40,18 @@ namespace console_lab
                 exitCmd.Description = "Exit app.";
             });
 
-            app.OnExecute(appExecuteFunc);
+            app.Command("watch", watchCmd =>
+            {
+                watchCmd.OnExecute(() =>
+                {
+                    mainCts.Cancel();
+                    StartingWatchLog();
+                    StartingListenKeyEvent();
+                    return 1;
+                });
+
+                watchCmd.Description= "Watch something";
+            });
 
             StartingMainLoop();
 
@@ -52,18 +60,6 @@ namespace console_lab
             {
                 Thread.Sleep(1000);
             }
-        }
-
-        private static int OnAppExecute()
-        {
-            if (watchCmd.HasValue())
-            {
-                mainCts.Cancel();
-                StartingWatchLog();
-                StartingListenKeyEvent();
-            }
-
-            return 1;
         }
 
         private static void StartingListenKeyEvent()
@@ -79,7 +75,7 @@ namespace console_lab
                     if (IsTerminateWatchLog(keyInfo))
                     {
                         watchingCts?.Cancel();
-
+                        CleanScreen();
                         StartingMainLoop();
                         break;
                     }
@@ -111,7 +107,7 @@ namespace console_lab
                     }
                     catch
                     {
-                        
+
                     }
                 }
             }, mainToken);
@@ -125,10 +121,9 @@ namespace console_lab
             {
                 while (!watchToken.IsCancellationRequested)
                 {
-                    Console.SetCursorPosition(0, 0);
-                    Console.Clear();
+                    CleanScreen();
 
-                    RenderTables();
+                    RenderingTables();
                     Console.SetCursorPosition(0, 19);
 
                     await Task.Delay(1000);
@@ -137,7 +132,7 @@ namespace console_lab
             }, watchToken);
         }
 
-        private static void RenderTables()
+        private static void RenderingTables()
         {
 
             var rand = new Random();
@@ -154,40 +149,18 @@ namespace console_lab
                 .AddRow($"{DateTime.Now} log something 2")
                 .AddRow($"{DateTime.Now} log something 3")
                 .AddRow($"{DateTime.Now} log something 4")
-                .AddRow($"{DateTime.Now} log something 5 ver long ......................");
+                .AddRow($"{DateTime.Now} log something 5 ver long ........");
             table2.Config = TableConfiguration.Unicode();
-            System.Console.WriteLine(table.ToString());
-            System.Console.WriteLine(table2.ToString());
+            var tables = new ConsoleTables(table, table2);
+            System.Console.WriteLine(tables.ToString());
+
             System.Console.WriteLine("Press CTRL+C to terminate watch log.");
         }
 
-        public static void ClearCurrentConsoleLine()
+        private static void CleanScreen()
         {
-            if (Console.IsOutputRedirected) return;
-
-            int currentLineCursor = Console.CursorTop;
-            Console.SetCursorPosition(0, Console.CursorTop);
-            Console.Write(new string(' ', Console.WindowWidth));
-            Console.SetCursorPosition(0, currentLineCursor);
-            Console.Out.Flush();
-        }
-    }
-
-    public class ConsoleSpinner
-    {
-        int counter;
-        public void Turn()
-        {
-            counter++;
-            switch (counter % 4)
-            {
-                case 0: Console.Write("/"); counter = 0; break;
-                case 1: Console.Write("-"); break;
-                case 2: Console.Write("\\"); break;
-                case 3: Console.Write("|"); break;
-            }
-            Thread.Sleep(100);
-            Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+            Console.SetCursorPosition(0, 0);
+            Console.Clear();
         }
     }
 }
