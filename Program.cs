@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using BetterConsoleTables;
 using McMaster.Extensions.CommandLineUtils;
 
-namespace console_lab
+namespace console_app_skeleton
 {
     class Program
     {
@@ -22,7 +22,7 @@ namespace console_lab
             Console.TreatControlCAsInput = true;
 
             app = new CommandLineApplication();
-            app.HelpOption();
+            app.HelpOption(inherited: true);
 
             app.Command("exit", exitCmd =>
             {
@@ -52,7 +52,7 @@ namespace console_lab
 
                 watchCmd.Description= "Watch something";
             });
-
+            
             StartingMainLoop();
 
             // Keeping main thread executing. To down the cpu usage using Sleep.
