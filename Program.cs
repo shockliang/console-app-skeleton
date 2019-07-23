@@ -21,6 +21,19 @@ namespace console_app_skeleton
         {
             Console.TreatControlCAsInput = true;
 
+            GenerateCommands();
+
+            StartingMainLoop();
+
+            // Keeping main thread executing. To down the cpu usage using Sleep.
+            while (!isTerminated)
+            {
+                Thread.Sleep(1000);
+            }
+        }
+
+        private static void GenerateCommands()
+        {
             app = new CommandLineApplication();
             app.HelpOption(inherited: true);
 
@@ -50,16 +63,8 @@ namespace console_app_skeleton
                     return 1;
                 });
 
-                watchCmd.Description= "Watch something";
+                watchCmd.Description = "Watch something";
             });
-            
-            StartingMainLoop();
-
-            // Keeping main thread executing. To down the cpu usage using Sleep.
-            while (!isTerminated)
-            {
-                Thread.Sleep(1000);
-            }
         }
 
         private static void StartingListenKeyEvent()
@@ -88,7 +93,6 @@ namespace console_app_skeleton
         private static void StartingMainLoop()
         {
             // System.Console.WriteLine("Strating main loop");
-
             keyEventCts?.Cancel();
             mainCts = new CancellationTokenSource();
             var mainToken = mainCts.Token;
@@ -101,6 +105,7 @@ namespace console_app_skeleton
                         string input = ReadLine.Read(PROMPT_TITLE);
                         if (!string.IsNullOrEmpty(input) || !string.IsNullOrWhiteSpace(input))
                         {
+                            GenerateCommands();
                             ReadLine.AddHistory(input);
                             app.Execute(input.Split(' ').ToArray());
                         }
